@@ -5,8 +5,10 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11.15"
 dependencies = [
+    "aiofiles>=25.1.0",
     "dotenv>=0.9.9",
     "fastapi>=0.139.2",
     "pydantic-settings>=2.14.2",
+    "python-multipart>=0.0.32",
     "uvicorn>=0.51.0",
 ]
