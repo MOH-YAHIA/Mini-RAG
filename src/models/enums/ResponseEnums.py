@@ -7,3 +7,4 @@ class ResponseStatus(Enum):
     FileSizeExceedsLimit = "file_size_exceeds_limit"
     FileUploadSuccess = "file_upload_success"
     FileUploadFailed = "file_upload_failed"
+    NoChunksCreated = "no_chunks_created"
