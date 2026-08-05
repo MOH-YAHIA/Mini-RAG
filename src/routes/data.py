@@ -46,7 +46,7 @@ async def upload_data(request: Request ,project_id: str, file: UploadFile, app_s
             content={ResponseStatus.ERROR.value: ResponseStatus.FileUploadFailed.value}
         )
     result['file_id']=file_name
-    result['project_id']=str(project.id)
+    result['project_id']=str(project.id)    
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content=result,

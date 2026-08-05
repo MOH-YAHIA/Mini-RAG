@@ -1,3 +1,7 @@
+import math
+
+from numpy import ceil
+
 from .DatabaseModel import DatabaseModel
 from .enums.DatabaseEnums import DatabaseEnums
 from .db_schema import Project
@@ -29,6 +33,23 @@ class ProjectModel(DatabaseModel):
             project = Project(**record)
 
         return project
+
+    async def get_projects(self, page: int=1, page_size: int=10):
+
+        # count total number of documents
+        documents_count = await self.collection.count_documents({})
+
+        # calculate total number of pages
+        total_pages = math.ceil( documents_count / page_size)
+
+        cursor = self.collection.find().skip( (page-1) * page_size ).limit(page_size)
+        projects = []
+        async for document in cursor:
+            projects.append(
+                Project(**document)
+            )
+
+        return projects, total_pages
 
 
 
