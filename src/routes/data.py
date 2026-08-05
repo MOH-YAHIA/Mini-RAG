@@ -1,4 +1,4 @@
-from fastapi import APIRouter,UploadFile,status,Depends
+from fastapi import APIRouter,UploadFile,status,Depends,Request
 from controllers import DataController,ProjectController, ProcessControler
 from models import ResponseStatus
 from fastapi.responses import JSONResponse
@@ -7,13 +7,17 @@ from helpers.config import get_settings,Settings
 import aiofiles
 from .schemas.data import ProcessRequest
 import logging
+from models.ProjectModel import ProjectModel
 
 logger = logging.getLogger('uvicorn.error')
 
-router = APIRouter(prefix="/data", tags=["data upload"])
+router = APIRouter(prefix="/data", tags=["data house"])
 
 @router.post("/upload{project_id}")
-async def upload_data(project_id: str, file: UploadFile, app_settings: Settings = Depends(get_settings)):
+async def upload_data(request: Request ,project_id: str, file: UploadFile, app_settings: Settings = Depends(get_settings)):
+
+    project_model = ProjectModel(request.app.mongodb_client)
+    project = await project_model.find_project(project_id)
 
     datacontroller = DataController()
 
@@ -42,9 +46,10 @@ async def upload_data(project_id: str, file: UploadFile, app_settings: Settings 
             content={ResponseStatus.ERROR.value: ResponseStatus.FileUploadFailed.value}
         )
     result['file_id']=file_name
+    result['project_id']=str(project.id)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content=result
+        content=result,
     )
 
 @router.post("/process{project_id}")
