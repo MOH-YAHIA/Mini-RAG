@@ -7,7 +7,9 @@ from helpers.config import get_settings,Settings
 import aiofiles
 from .schemas.data import ProcessRequest
 import logging
-from models.ProjectModel import ProjectModel
+from models import Chunk, ProjectModel, ChunkModel
+from bson.objectid import ObjectId
+
 
 logger = logging.getLogger('uvicorn.error')
 
@@ -53,12 +55,16 @@ async def upload_data(request: Request ,project_id: str, file: UploadFile, app_s
     )
 
 @router.post("/process{project_id}")
-async def process_data(project_id: str, process_request:ProcessRequest):
+async def process_data(request: Request, project_id: str, process_request:ProcessRequest):
+
+    project_model = ProjectModel(request.app.mongodb_client)
+    project = await project_model.find_project(project_id)
 
     file_id = process_request.file_id
     chunk_size = process_request.chunk_size
     chunk_overlap = process_request.overlap_size
-
+    do_reset = process_request.do_reset
+    
     process_controler = ProcessControler(project_id)
     documents = process_controler.load_document(file_id)
     chunks = process_controler.split_documents(documents, chunk_size, chunk_overlap)
@@ -69,4 +75,21 @@ async def process_data(project_id: str, process_request:ProcessRequest):
             content={ResponseStatus.ERROR.value: ResponseStatus.NoChunksCreated.value}
         )
     
-    return chunks
+    chunk_model = ChunkModel(request.app.mongodb_client)
+
+    ready_chunks = [Chunk(
+        chunk_project_id=project.id,
+        chunk_text=doc.page_content,
+        chunk_metadata=doc.metadata,
+        chunk_order=i+1
+    ) 
+    for i,doc in enumerate(chunks)]
+    if do_reset:
+       _ = await chunk_model.delete_chunks_by_project_id(project.id)
+
+
+    chunk_count = await chunk_model.insert_chunks(ready_chunks)
+    return JSONResponse(
+                status_code=status.HTTP_200_OK,
+                content={ResponseStatus.SUCCESS.value: f"{chunk_count} chunks created and inserted successfully."}
+            )
