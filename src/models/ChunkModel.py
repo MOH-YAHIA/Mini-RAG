@@ -9,7 +9,22 @@ class ChunkModel(DatabaseModel):
 
         self.collection = self.db_client[DatabaseEnums.CHUNKS.value]
 
+    @classmethod
+    async def create_instance(cls,db_client):
+        await cls.create_index(db_client)
+        model = cls(db_client)
+        return model
 
+    @staticmethod
+    async def create_index(db_client):
+        collection = db_client[DatabaseEnums.CHUNKS.value]
+        for index in Chunk.get_indexes():
+            await collection.create_index(
+                index["keys"],
+                name=index["name"],
+                **index["options"]
+            )
+                  
     async def insert_chunk(self, chunk):
         result = await self.collection.insert_one(chunk.model_dump(by_alias=True, exclude_none=True))
         chunk.id = result.inserted_id

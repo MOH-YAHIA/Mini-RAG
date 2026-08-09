@@ -12,3 +12,13 @@ class Chunk(BaseModel):
     model_config = ConfigDict(
         arbitrary_types_allowed = True #don't complain about ObjectId as unkown type. validate it too.
     )
+
+    @staticmethod
+    def get_indexes():
+        return [
+            {
+                "keys": [("chunk_project_id", 1)],
+                "options": {"unique": False},
+                "name": "chunk_project_id_index_1"
+            }
+        ]

@@ -16,3 +16,13 @@ class Project(BaseModel):
     model_config = ConfigDict(
         arbitrary_types_allowed = True
     )
+
+    @staticmethod
+    def get_indexes():
+        return [
+            {
+                "keys": [("project_id", 1)],
+                "options": {"unique": True},
+                "name": "project_id_index_1"
+            }
+        ]

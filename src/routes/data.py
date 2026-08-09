@@ -1,13 +1,13 @@
 from fastapi import APIRouter,UploadFile,status,Depends,Request
 from controllers import DataController,ProjectController, ProcessControler
-from models import ResponseStatus
+from models import ResponseStatus,AssetTypeEnums
 from fastapi.responses import JSONResponse
 import os
 from helpers.config import get_settings,Settings
 import aiofiles
 from .schemas.data import ProcessRequest
 import logging
-from models import Chunk, ProjectModel, ChunkModel
+from models import Chunk, ProjectModel, ChunkModel, AssetModel, Asset
 from bson.objectid import ObjectId
 
 
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/data", tags=["data house"])
 @router.post("/upload{project_id}")
 async def upload_data(request: Request ,project_id: str, file: UploadFile, app_settings: Settings = Depends(get_settings)):
 
-    project_model = ProjectModel(request.app.mongodb_client)
+    project_model = await ProjectModel.create_instance(request.app.mongodb_client)
     project = await project_model.find_project(project_id)
 
     datacontroller = DataController()
@@ -47,8 +47,22 @@ async def upload_data(request: Request ,project_id: str, file: UploadFile, app_s
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={ResponseStatus.ERROR.value: ResponseStatus.FileUploadFailed.value}
         )
+
+    asset_model = await AssetModel.create_instance(request.app.mongodb_client)
+    asset = Asset(
+        asset_project_id=project.id,
+        asset_name=file_name,
+        asset_type=AssetTypeEnums.File.value,
+        asset_size=os.path.getsize(file_path)
+
+    )
+    asset = await asset_model.insert_asset(asset)
+
+
     result['file_id']=file_name
     result['project_id']=str(project.id)    
+    result['asset_id']=str(asset.id)
+
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content=result,
@@ -57,7 +71,7 @@ async def upload_data(request: Request ,project_id: str, file: UploadFile, app_s
 @router.post("/process{project_id}")
 async def process_data(request: Request, project_id: str, process_request:ProcessRequest):
 
-    project_model = ProjectModel(request.app.mongodb_client)
+    project_model = await ProjectModel.create_instance(request.app.mongodb_client)
     project = await project_model.find_project(project_id)
 
     file_id = process_request.file_id
@@ -75,7 +89,7 @@ async def process_data(request: Request, project_id: str, process_request:Proces
             content={ResponseStatus.ERROR.value: ResponseStatus.NoChunksCreated.value}
         )
     
-    chunk_model = ChunkModel(request.app.mongodb_client)
+    chunk_model = await ChunkModel.create_instance(request.app.mongodb_client)
 
     ready_chunks = [Chunk(
         chunk_project_id=project.id,

@@ -10,10 +10,25 @@ from .db_schema import Project
 class ProjectModel(DatabaseModel):
     def __init__(self, db_client):
         super().__init__(db_client)
-
         self.collection = self.db_client[DatabaseEnums.PROJECTS.value]
 
+        # we should create indexes when the model is initialized. but as creating indexes is an async operation, we cannot do it in the constructor. so we will create a static method to create indexes and call it when the model is initialized.
+    @classmethod
+    async def create_instance(cls,db_client):
+        await cls.create_index(db_client)
+        model = cls(db_client)
+        return model
 
+    @staticmethod
+    async def create_index(db_client):
+        collection = db_client[DatabaseEnums.PROJECTS.value]
+        for index in Project.get_indexes():
+            await collection.create_index(
+                index["keys"],
+                name=index["name"],
+                **index["options"]
+            )
+                
     async def insert_project(self, project_id):
         project = Project(project_id=project_id)
         result = await self.collection.insert_one(project.model_dump(by_alias=True, exclude_none=True))
