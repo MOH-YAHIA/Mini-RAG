@@ -4,9 +4,9 @@ class Settings(BaseSettings): # act like validation layer.read and parse envirom
 
     APP_NAME: str
     APP_VERSION: str
-    FILE_ALLOWED_TYPES: list[str]
-    FILE_MAX_SIZE: int
-    FILE_CHUNK_SIZE : int
+    ASSET_ALLOWED_TYPES: list[str]
+    ASSET_MAX_SIZE: int
+    ASSET_CHUNK_SIZE : int
     MONGODB_URL : str
     MONGODB_DATABASE : str
 

@@ -1,6 +1,6 @@
 from enum import Enum
 
-class ProcessTypeEnum(Enum):
+class ProcessTypeEnums(Enum):
 
     TXT = '.txt'
     PDF = '.pdf'

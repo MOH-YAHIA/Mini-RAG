@@ -3,9 +3,14 @@ from enum import Enum
 class ResponseStatus(Enum):
     SUCCESS = "success"
     ERROR = "error"
-    FileTypeNotAllowed = "file_type_not_allowed"
-    FileSizeExceedsLimit = "file_size_exceeds_limit"
-    FileUploadSuccess = "file_upload_success"
-    FileUploadFailed = "file_upload_failed"
+    AssetTypeNotAllowed = "asset_type_not_allowed"
+    AssetSizeExceedsLimit = "asset_size_exceeds_limit"
+  
+    AssetUploadFailed = "asset_upload_failed"
     NoChunksCreated = "no_chunks_created"
     AssetNotFound = "asset_not_found"
+
+    AssetUploadSuccess = "asset_upload_success"
+    AssetValidateSuccess = 'asset_validate_success'
+
+    AssetProcessSuccess = 'asset_process_success'

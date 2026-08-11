@@ -1,6 +1,6 @@
 from .DatabaseModel import DatabaseModel
 from .enums.DatabaseEnums import DatabaseEnums
-from .db_schema.chunk import Chunk
+from .db_schemes.chunk import Chunk
 from pymongo import InsertOne
 
 class ChunkModel(DatabaseModel):

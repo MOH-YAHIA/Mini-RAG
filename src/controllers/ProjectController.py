@@ -1,4 +1,4 @@
-from .BaseControler import BaseController
+from .BaseController import BaseController
 import os
 
 class ProjectController(BaseController):

@@ -1,28 +1,27 @@
-from .BaseControler import BaseController
+from .BaseController import BaseController
 from pathlib import Path
 from typing import List
 from langchain_core.documents import Document
 from langchain_community.document_loaders import TextLoader, PyPDFLoader
 import os 
-from models import ProcessTypeEnum
+from models import ProcessTypeEnums
 from typing import List
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
-class ProcessControler(BaseController):
+class ProcessController(BaseController):
     def __init__(self, project_id):
         super().__init__()
 
         self.project_id = project_id
 
-    def load_document(self,file_id: str) -> List[Document]:
+    def load_document(self,asset_name: str) -> List[Document]:
         """
         Loads a document based on its extension using lightweight loaders.
         
-        :param file_path: Path to the input file (.txt or .pdf)
         :return: List of LangChain Document objects
         """
-        path = os.path.join(self.projects_directory,self.project_id, file_id)
+        path = os.path.join(self.projects_directory,self.project_id, asset_name)
 
         # Invariant: Check if file exists before processing
         if not os.path.exists(path):
@@ -31,9 +30,9 @@ class ProcessControler(BaseController):
         ext = '.' + path.split('.')[-1].lower()
 
         # Strategy pattern mapping extension -> lightweight loader
-        if ext == ProcessTypeEnum.TXT.value:
+        if ext == ProcessTypeEnums.TXT.value:
             loader = TextLoader(str(path), encoding="utf-8")
-        elif ext == ProcessTypeEnum.PDF.value:
+        elif ext == ProcessTypeEnums.PDF.value:
             loader = PyPDFLoader(str(path))
         else:
             return None

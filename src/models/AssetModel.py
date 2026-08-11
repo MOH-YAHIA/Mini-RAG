@@ -1,5 +1,5 @@
 from .DatabaseModel import DatabaseModel
-from .db_schema import Asset
+from .db_schemes import Asset
 from .enums.DatabaseEnums import DatabaseEnums
 from bson import ObjectId
 
@@ -32,12 +32,15 @@ class AssetModel(DatabaseModel):
 
         return asset
 
-    async def get_project_assets(self, asset_project_id: str, asset_type: str):
+    async def get_project_assets(self, asset_project_id: str, asset_type: str = None):
+        # use the asset_project_id index to quickly find documents matching that field, then filter those results by asset_type.
+        query = {
+            "asset_project_id": ObjectId(asset_project_id) if isinstance(asset_project_id, str) else asset_project_id
+        }
+        if asset_type:
+            query["asset_type"] = asset_type
 
-        records = await self.collection.find({
-            "asset_project_id": ObjectId(asset_project_id) if isinstance(asset_project_id, str) else asset_project_id,
-            "asset_type": asset_type,
-        }).to_list(length=None)
+        records = await self.collection.find(query).to_list(length=None)
 
         return [
             Asset(**record)

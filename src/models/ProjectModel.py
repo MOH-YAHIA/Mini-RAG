@@ -4,7 +4,7 @@ from numpy import ceil
 
 from .DatabaseModel import DatabaseModel
 from .enums.DatabaseEnums import DatabaseEnums
-from .db_schema import Project
+from .db_schemes import Project
 
 
 class ProjectModel(DatabaseModel):
@@ -29,8 +29,8 @@ class ProjectModel(DatabaseModel):
                 **index["options"]
             )
                 
-    async def insert_project(self, project_id):
-        project = Project(project_id=project_id)
+    async def insert_project(self, project):
+        
         result = await self.collection.insert_one(project.model_dump(by_alias=True, exclude_none=True))
         project.id = result.inserted_id
 
@@ -43,7 +43,8 @@ class ProjectModel(DatabaseModel):
         '''
         record = await self.collection.find_one({"project_id": project_id})
         if record is None:
-            project = await self.insert_project(project_id)
+            project = Project(project_id=project_id)
+            project = await self.insert_project(project)
         else:
             project = Project(**record)
 

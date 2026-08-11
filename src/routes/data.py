@@ -1,14 +1,12 @@
 from fastapi import APIRouter,UploadFile,status,Depends,Request
-from controllers import DataController,ProjectController, ProcessControler
-from models import ResponseStatus,AssetTypeEnums
+from controllers import AssetController, ProcessController
+from models import ResponseStatus,AssetTypeEnums, Chunk, ProjectModel, ChunkModel, AssetModel, Asset
 from fastapi.responses import JSONResponse
 import os
 from helpers.config import get_settings,Settings
 import aiofiles
-from .schemas.data import ProcessRequest
+from .request_schemes import ProcessRequest
 import logging
-from models import Chunk, ProjectModel, ChunkModel, AssetModel, Asset
-from bson.objectid import ObjectId
 
 
 logger = logging.getLogger('uvicorn.error')
@@ -16,50 +14,50 @@ logger = logging.getLogger('uvicorn.error')
 router = APIRouter(prefix="/data", tags=["data house"])
 
 @router.post("/upload{project_id}")
-async def upload_data(request: Request ,project_id: str, file: UploadFile, app_settings: Settings = Depends(get_settings)):
+async def upload_data(request: Request ,project_id: str, asset: UploadFile, app_settings: Settings = Depends(get_settings)):
 
     project_model = await ProjectModel.create_instance(request.app.mongodb_client)
     project = await project_model.find_project(project_id)
 
-    datacontroller = DataController()
+    asset_controller = AssetController()
+    result = asset_controller.validate_asset(asset)
 
-    result = datacontroller.validate_file(file)
-
-    if result.get(ResponseStatus.ERROR.value):
+    if result !=  ResponseStatus.AssetValidateSuccess.value:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content=result
+            content=str(result)
         )
     
     
-    file_path,file_name = datacontroller.generate_unique_filepath(
-        orig_file_name=file.filename,
+    asset_path,asset_name = asset_controller.generate_unique_assetpath(
+        orig_asset_name=asset.filename,
         project_id=project_id
     )
 
     try:
-        async with aiofiles.open(file_path, 'wb') as f:
-            while chunk := await file.read(app_settings.FILE_CHUNK_SIZE):  # Read the file in chunks
+        async with aiofiles.open(asset_path, 'wb') as f:
+            while chunk := await asset.read(app_settings.ASSET_CHUNK_SIZE):  # Read the file in chunks
                 await f.write(chunk)
     except Exception as e:
         logger.error(f"Error occurred while uploading file: {e}")
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={ResponseStatus.ERROR.value: ResponseStatus.FileUploadFailed.value}
+            content=ResponseStatus.AssetUploadFailed.value
         )
 
     asset_model = await AssetModel.create_instance(request.app.mongodb_client)
     asset = Asset(
         asset_project_id=project.id,
-        asset_name=file_name,
+        asset_name=asset_name,
         asset_type=AssetTypeEnums.File.value,
-        asset_size=os.path.getsize(file_path)
+        asset_size=os.path.getsize(asset_path)
 
     )
     asset = await asset_model.insert_asset(asset)
 
 
-    result['file_id']=file_name
+    result={'signal' : str(ResponseStatus.AssetUploadSuccess.value)}
+    result['asset_name']=asset_name
     result['project_id']=str(project.id)    
     result['asset_id']=str(asset.id)
 
@@ -93,14 +91,20 @@ async def process_data(request: Request, project_id: str, process_request:Proces
         if assets[0] is None:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
-                content={ResponseStatus.ERROR.value: ResponseStatus.AssetNotFound.value}
+                content=str(ResponseStatus.AssetNotFound.value)
             )
     else:
         assets = await asset_model.get_project_assets(asset_project_id=project.id, asset_type=AssetTypeEnums.File.value)
+        if len(assets) == 0:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content=str(ResponseStatus.AssetNotFound.value)
+            )
 
 
-    process_controler = ProcessControler(project_id)
+    process_controler = ProcessController(project_id)
     total_chunks_created = 0
+    successful_asset_process = 0
     for asset in assets:
         asset_name = asset.asset_name
         documents = process_controler.load_document(asset_name)
@@ -125,8 +129,14 @@ async def process_data(request: Request, project_id: str, process_request:Proces
 
         chunk_count = await chunk_model.insert_chunks(ready_chunks)
         total_chunks_created += chunk_count
+        successful_asset_process+=1 
+
+    result = {'signal': str(ResponseStatus.AssetProcessSuccess.value)}
+    result['total_chunks_created']=total_chunks_created
+    result['successful_asset_process']=successful_asset_process
+
 
     return JSONResponse(
                 status_code=status.HTTP_200_OK,
-                content={ResponseStatus.SUCCESS.value: f"{total_chunks_created} chunks created and inserted successfully."}
+                content=result
             )
