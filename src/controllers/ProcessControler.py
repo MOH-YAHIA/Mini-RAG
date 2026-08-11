@@ -26,7 +26,7 @@ class ProcessControler(BaseController):
 
         # Invariant: Check if file exists before processing
         if not os.path.exists(path):
-            raise FileNotFoundError(f"File not found at: {path}")
+            return None
 
         ext = '.' + path.split('.')[-1].lower()
 
@@ -36,7 +36,7 @@ class ProcessControler(BaseController):
         elif ext == ProcessTypeEnum.PDF.value:
             loader = PyPDFLoader(str(path))
         else:
-            raise ValueError(f"Unsupported extension '{ext}'. Only .txt and .pdf are supported.")
+            return None
 
         return loader.load()
 
@@ -65,4 +65,9 @@ class ProcessControler(BaseController):
             length_function=len
         )
 
-        return splitter.split_documents(documents)
+        try:
+            chunks =  splitter.split_documents(documents)
+        except Exception as e:
+            self.logger.error(f"Error while splitting documents: {e}")
+            return None
+        return chunks

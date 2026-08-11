@@ -8,3 +8,4 @@ class ResponseStatus(Enum):
     FileUploadSuccess = "file_upload_success"
     FileUploadFailed = "file_upload_failed"
     NoChunksCreated = "no_chunks_created"
+    AssetNotFound = "asset_not_found"
