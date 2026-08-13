@@ -10,6 +10,19 @@ class Settings(BaseSettings): # act like validation layer.read and parse envirom
     MONGODB_URL : str
     MONGODB_DATABASE : str
 
+    PROVIDER : str
+    OPENAI_BASE_URL : str
+    OPENAI_BASE_API_KEY : str
+
+                
+    EMBEDDING_MODEL_ID : str
+    EMBEDDING_DIM : int
+
+    GENERATION_MODEL_ID : str
+    GENERATION_DAFAULT_INPUT_MAX_CHARACTERS : str = None
+    GENERATION_DAFAULT_OUTPUT_MAX_TOKENS : str = None
+    GENERATION_DAFAULT_TEMPERATURE : float = None
+    
     model_config=SettingsConfigDict(
         env_file = ".env" #src is the import root 
     )

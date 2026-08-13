@@ -6,7 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 from routes import base, data
 from helpers.config import get_settings
-
+from stores.llm import LLMProviderFactory
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -15,6 +15,8 @@ async def lifespan(app: FastAPI):
 
     app.mongodb_conn = AsyncIOMotorClient(env_vars.MONGODB_URL) # Create/configure the client. No DB I/O is awaited here. 
     app.mongodb_client = app.mongodb_conn[env_vars.MONGODB_DATABASE]
+
+    app.llm_provider = LLMProviderFactory(env_vars).get_provider()
 
     yield
 
@@ -27,6 +29,7 @@ def create_app() -> FastAPI:
 
     app.include_router(base.router)
     app.include_router(data.router)
+    
 
     return app
 
