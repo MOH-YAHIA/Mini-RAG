@@ -1,0 +1,30 @@
+from abc import ABC , abstractmethod
+
+class ProviderInterface(ABC):
+
+    @abstractmethod
+    def set_generation_model(self, model_id: str):
+        pass
+
+    @abstractmethod
+    def set_embedding_model(self, model_id: str, embedding_size: int):
+        pass
+
+    @abstractmethod
+    def generate_text(self, prompt: str, chat_history: list=[], max_output_tokens: int=None,
+                            temperature: float = None):
+        pass
+
+    @abstractmethod
+    def embed_text(self, text: str, document_type: str = None):
+        pass
+
+    @abstractmethod
+    def construct_prompt(self, prompt: str, role: str):
+        pass
+
+    @abstractmethod
+    def set_model_config(self, input_max_characters: int=1000,
+                           generation_max_output_tokens: int=1000,
+                           generation_temperature: float=0.1):
+        pass
