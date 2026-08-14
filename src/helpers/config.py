@@ -22,7 +22,12 @@ class Settings(BaseSettings): # act like validation layer.read and parse envirom
     GENERATION_DAFAULT_INPUT_MAX_CHARACTERS : str = None
     GENERATION_DAFAULT_OUTPUT_MAX_TOKENS : str = None
     GENERATION_DAFAULT_TEMPERATURE : float = None
-    
+
+
+    VECTOR_DB_PROVIDER : str
+    VECTOR_DB_PATH : str
+    VECTOR_DB_DISTANCE_METHOD : str
+
     model_config=SettingsConfigDict(
         env_file = ".env" #src is the import root 
     )

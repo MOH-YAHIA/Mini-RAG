@@ -7,6 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from routes import base, data
 from helpers.config import get_settings
 from stores.llm import LLMProviderFactory
+from stores.vectorDB import VectorDBProviderFactory
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -17,6 +18,9 @@ async def lifespan(app: FastAPI):
     app.mongodb_client = app.mongodb_conn[env_vars.MONGODB_DATABASE]
 
     app.llm_provider = LLMProviderFactory(env_vars).get_provider()
+    app.vector_db_provider = VectorDBProviderFactory(env_vars).get_provider()
+
+    print(type(app.vector_db_provider))
 
     yield
 
