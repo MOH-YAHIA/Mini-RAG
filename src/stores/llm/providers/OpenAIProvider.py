@@ -82,6 +82,7 @@ class OpenAIProvider(ProviderInterface):
         response = self.client.embeddings.create(
             model = self.embedding_model_id,
             input = text,
+            encoding_format="float"
         )
 
         try:
