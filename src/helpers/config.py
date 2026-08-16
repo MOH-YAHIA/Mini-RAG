@@ -17,7 +17,8 @@ class Settings(BaseSettings): # act like validation layer.read and parse envirom
                 
     EMBEDDING_MODEL_ID : str
     EMBEDDING_DIM : int
-
+    EMBEDDING_DISTANCE_METHOD : str
+    
     GENERATION_MODEL_ID : str
     GENERATION_DAFAULT_INPUT_MAX_CHARACTERS : str = None
     GENERATION_DAFAULT_OUTPUT_MAX_TOKENS : str = None
