@@ -36,6 +36,10 @@ class ProjectModel(DatabaseModel):
 
         return project
 
+    async def does_project_exist(self, project_id):
+        record = await self.collection.find_one({"project_id": project_id})
+        return record is not None
+    
     async def find_project(self,project_id):
         '''
         Retrieve a project by its ID.
