@@ -21,5 +21,10 @@ class Chunk(BaseModel):
                 "keys": [("chunk_project_id", 1)],
                 "options": {"unique": False},
                 "name": "chunk_project_id_index_1"
-            }
+            },
+            {
+                "keys": [("chunk_asset_id", 1)],
+                "options": {"unique": False},
+                "name": "chunk_asset_id_index_1"
+            },
         ]
