@@ -3,6 +3,7 @@ from .ProviderInterface import ProviderInterface
 from ..VectorDBEnums import DistanceMethodEnums
 import logging
 from typing import List
+import uuid
 
 
 class QdrantProvider(ProviderInterface):
@@ -74,7 +75,7 @@ class QdrantProvider(ProviderInterface):
         text: str,
         vector: list,
         metadata: dict = None,
-        point_id: str = None,
+        point_id: int = None,
     ):
         if not self.is_collection_existed(collection_name):
             self.logger.error(
@@ -88,7 +89,7 @@ class QdrantProvider(ProviderInterface):
                 collection_name=collection_name,
                 points=[
                     models.PointStruct(
-                        id=point_id,
+                        id=str(uuid.uuid4()),
                         vector=vector,
                         payload={
                             "text": text,
@@ -134,10 +135,13 @@ class QdrantProvider(ProviderInterface):
             batch_vectors = vectors[i:batch_end]
             batch_metadata = metadata[i:batch_end]
             batch_ids = point_ids[i:batch_end]
-
+            self.logger.info(
+                f"Inserting {len(batch_texts)} points to collection: "
+                f"{collection_name}"
+            )
             batch_points = [
                 models.PointStruct(
-                    id=batch_ids[x],
+                    id=str(uuid.uuid4()),
                     vector=batch_vectors[x],
                     payload={
                         "text": batch_texts[x],
@@ -152,6 +156,10 @@ class QdrantProvider(ProviderInterface):
                     collection_name=collection_name,
                     points=batch_points,
                 )
+                self.logger.info(
+                    f"Inserted {len(batch_texts)} points to collection: "
+                    f"{collection_name}")
+                
             except Exception as e:
                 self.logger.error(
                     f"Error while inserting batch: {e}"
