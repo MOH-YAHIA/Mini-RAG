@@ -25,6 +25,10 @@ class AssetModel(DatabaseModel):
                 **index["options"]
             )
 
+    async def dose_asset_exist(self, asset_name):
+        record = await self.collection.find_one({"asset_name": asset_name})
+        return record is not None
+    
     async def insert_asset(self, asset: Asset):
 
         result = await self.collection.insert_one(asset.model_dump(by_alias=True, exclude_none=True))
