@@ -14,3 +14,12 @@ class ResponseStatus(Enum):
     AssetValidateSuccess = 'asset_validate_success'
 
     AssetProcessSuccess = 'asset_process_success'
+    ProjectNotFound = 'project_not_found_error'
+    ChunksIndexedSuccess = 'chunks_indexed_success'
+    ChunksIndexedFaild = 'chunks_indexed_failed'
+
+    VECTORDB_SEARCH_FAILD = 'vector_db_search_failed'
+    VECTORDB_SEARCH_SUCCESS = 'vector_db_search_success'
+
+    CollectionNotFaild = 'collection_not_faild'
+    CollectionInfoSuccess = 'collection_info_success'

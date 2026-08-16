@@ -1,0 +1,73 @@
+from .BaseController import BaseController
+from models import Project,Chunk
+from typing import List
+class NlpController(BaseController):
+    def __init__(self,llm_provider, vector_db_provider):
+        super().__init__()
+
+        self.llm_provider = llm_provider
+        self.vector_db_provider = vector_db_provider
+
+    def get_project_collection(self,project_id):
+        return f"collection_{project_id}".strip()
+
+    
+    def embed_chunks(self, project : Project , chunks: List[Chunk], embedding_size:int , distance_method: str):
+        collection_name = self.get_project_collection(project.project_id)
+
+        chunks_text = [chunk.chunk_text for chunk in chunks]
+        chunks_metadata = [chunk.chunk_metadata for chunk in chunks]
+
+        chunks_embeddings = [self.llm_provider.embed_text(chunk_text)
+                             for chunk_text in chunks_text]
+
+        success = self.vector_db_provider.create_collection(collection_name = collection_name,
+                                                  embedding_size = embedding_size,
+                                                  distance_method = distance_method,
+                                                  )
+
+        if not success:
+            return False
+        
+        success = self.vector_db_provider.insert_many(collection_name = collection_name,
+                                            texts = chunks_text,
+                                            vectors = chunks_embeddings,
+                                            metadata = chunks_metadata)
+
+        if not success:
+            return False
+        
+        return True
+
+        
+    def search_vector_db(self, project: Project, text: str, limit: int = 10):
+
+            # step1: get collection name
+            collection_name = self.get_project_collection(project_id=project.project_id)
+
+            # step2: get text embedding vector
+            vector = self.llm_provider.embed_text(text=text)
+
+            if not vector or len(vector) == 0:
+                return False
+
+            # step3: do semantic search
+            results = self.vector_db_provider.search_by_vector(
+                collection_name=collection_name,
+                vector=vector,
+                limit=limit
+            )
+
+            if not results:
+                return False
+
+            return results
+
+    
+    def get_project_collection_info(self,project: Project):
+        collection_name = self.get_project_collection(project_id=project.project_id)
+        if not self.vector_db_provider.is_collection_existed(collection_name=collection_name):
+            return None
+        collection_info = self.vector_db_provider.get_collection_info(collection_name=collection_name)
+
+        return collection_info.dict()
