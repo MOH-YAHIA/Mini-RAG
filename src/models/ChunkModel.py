@@ -1,3 +1,5 @@
+import math
+
 from .DatabaseModel import DatabaseModel
 from .enums.DatabaseEnums import DatabaseEnums
 from .db_schemes.chunk import Chunk
@@ -56,3 +58,35 @@ class ChunkModel(DatabaseModel):
     async def delete_chunks_by_project_id(self, project_id):
         result = await self.collection.delete_many({"chunk_project_id": project_id})
         return result.deleted_count
+
+    async def get_chunks_by_project_id(self, project_id, batch_size=100):
+        # count total number of documents
+        documents_count = await self.collection.count_documents({})
+
+        # calculate total number of pages
+        total_batches = math.ceil( documents_count / batch_size)
+        chunks = []
+        for i in range(0, total_batches, batch_size):
+            batch = await self.collection.find({"chunk_project_id": project_id}).skip(i).limit(batch_size).to_list(length=None)   
+            for document in batch:
+                chunks.append(
+                    Chunk(**document)
+                )
+
+        return chunks
+
+    async def get_chunks_by_asset_id(self, project_id, batch_size=100):
+        # count total number of documents
+        documents_count = await self.collection.count_documents({})
+
+        # calculate total number of pages
+        total_batches = math.ceil( documents_count / batch_size)
+        chunks = []
+        for i in range(0, total_batches, batch_size):
+            batch = await self.collection.find({"chunk_asset_id": project_id}).skip(i).limit(batch_size).to_list(length=None)   
+            for document in batch:
+                chunks.append(
+                    Chunk(**document)
+                )
+
+        return chunks
