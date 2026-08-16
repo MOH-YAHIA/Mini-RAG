@@ -4,10 +4,16 @@ from fastapi import FastAPI
 import uvicorn
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from routes import base, data
+from routes import base, data , nlp
 from helpers.config import get_settings
 from stores.llm import LLMProviderFactory
 from stores.vectorDB import VectorDBProviderFactory
+
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -19,21 +25,20 @@ async def lifespan(app: FastAPI):
 
     app.llm_provider = LLMProviderFactory(env_vars).get_provider()
     app.vector_db_provider = VectorDBProviderFactory(env_vars).get_provider()
-
-    print(type(app.vector_db_provider))
+    app.vector_db_provider.connect()
 
     yield
 
     # Shutdown
     app.mongodb_conn.close()
-
+    app.vector_db_provider.disconnect()
 
 def create_app() -> FastAPI:
     app = FastAPI(lifespan=lifespan)
 
     app.include_router(base.router)
     app.include_router(data.router)
-    
+    app.include_router(nlp.nlp_router)
 
     return app
 
