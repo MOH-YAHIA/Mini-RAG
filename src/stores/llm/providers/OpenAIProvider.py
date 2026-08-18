@@ -36,7 +36,7 @@ class OpenAIProvider(ProviderInterface):
         self.embedding_dim = embedding_dim
 
     def process_text(self, text: str):
-        return text[:self.default_input_max_characters].strip()
+        return text[:self.default_generation_input_max_characters].strip()
 
     def generate_text(self, prompt: str, chat_history: list=[], max_output_tokens: int=None,
                             temperature: float = None):
@@ -64,7 +64,7 @@ class OpenAIProvider(ProviderInterface):
         )
 
         try:
-            return response.choices[0].message["content"]
+            return response.choices[0].message.content
         except Exception as e:
             self.logger.error(f"Error while generating text with OpenAI with Exception{e}")
             return None
