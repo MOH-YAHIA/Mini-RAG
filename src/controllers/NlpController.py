@@ -1,6 +1,9 @@
 from .BaseController import BaseController
 from models import Project,Chunk
 from typing import List
+from stores.llm.templates import TemplateParser
+from stores.llm.LLMEnums import OpenAIEnums
+
 class NlpController(BaseController):
     def __init__(self,llm_provider, vector_db_provider):
         super().__init__()
@@ -71,3 +74,28 @@ class NlpController(BaseController):
         collection_info = self.vector_db_provider.get_collection_info(collection_name=collection_name)
 
         return collection_info.dict()
+
+    def answer_rag_question(self, locale : str ,  project: Project, question: str, limit: int = 10):
+
+        templete_parser = TemplateParser(locale=locale)
+        system_prompt = templete_parser.get_rag_prompt(prompt_name="system").substitute()
+        document_prompt = templete_parser.get_rag_prompt(prompt_name="retrieved_document")
+        footer_prompt = templete_parser.get_rag_prompt(prompt_name="footer").substitute()
+
+        results = self.search_vector_db(project=project, text=question, limit=limit)
+        if not results:
+            return None, None
+
+        docs_text = [result.dict().get("payload").get("text") for result in results]
+        retrived_text = "\n\n" + "\n\n".join([document_prompt.substitute(retrieved_text=doc_text) for doc_text in docs_text])
+
+        system_prompt += retrived_text
+        system_prompt += footer_prompt
+
+        chat_history = [
+            self.llm_provider.construct_prompt(prompt=system_prompt, role=OpenAIEnums.SYSTEM.value)
+        ]
+
+        answer =  self.llm_provider.generate_text(prompt=question, chat_history=chat_history)
+
+        return answer,chat_history
