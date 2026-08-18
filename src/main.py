@@ -4,7 +4,7 @@ from fastapi import FastAPI
 import uvicorn
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from routes import base, data , nlp
+from routes import data, health_router, nlp
 from helpers.config import get_settings
 from stores.llm import LLMProviderFactory
 from stores.vectorDB import VectorDBProviderFactory
@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     app = FastAPI(lifespan=lifespan)
 
-    app.include_router(base.router)
+    app.include_router(health_router)
     app.include_router(data.router)
     app.include_router(nlp.nlp_router)
 

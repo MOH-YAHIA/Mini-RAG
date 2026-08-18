@@ -17,7 +17,12 @@ class QdrantProvider(ProviderInterface):
         self.logger = logging.getLogger(__name__)
 
     def connect(self):
-        self.client = QdrantClient(url=self.db_path)
+        try :
+            self.client = QdrantClient(url=self.db_path)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error while connecting to Qdrant with Exception {e}")
+            return False
 
     def disconnect(self):
         self.client = None
