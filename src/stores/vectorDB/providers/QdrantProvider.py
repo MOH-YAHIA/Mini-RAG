@@ -17,7 +17,7 @@ class QdrantProvider(ProviderInterface):
         self.logger = logging.getLogger(__name__)
 
     def connect(self):
-        self.client = QdrantClient(path=self.db_path)
+        self.client = QdrantClient(url=self.db_path)
 
     def disconnect(self):
         self.client = None

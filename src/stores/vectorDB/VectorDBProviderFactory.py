@@ -11,6 +11,6 @@ class VectorDBProviderFactory:
     def get_provider(self):
         if self.config.VECTOR_DB_PROVIDER == VectorDBEnums.QDRANT.value:
             client =  QdrantProvider(
-                db_path = self.base_controller.get_vector_db_path(self.config.VECTOR_DB_PATH)
+                db_path = self.config.VECTOR_DB_PATH
             )
         return client

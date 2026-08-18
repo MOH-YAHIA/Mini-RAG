@@ -1,0 +1,18 @@
+services:
+  mongodb:
+    image: mongo:8
+    container_name: mongodb
+    restart: unless-stopped
+    ports:
+      - "27007:27017"
+    volumes:
+      - ./mongodb_data:/data/db
+
+  qdrant:
+    image: qdrant/qdrant:v1.19.0
+    container_name: qdrant
+    restart: unless-stopped
+    ports:
+      - "63336:6333"
+    volumes:
+      - ./qdrant_data:/qdrant/storage
