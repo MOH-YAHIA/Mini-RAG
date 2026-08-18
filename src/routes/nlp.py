@@ -127,7 +127,7 @@ async def get_collection_info(request: Request , project_id: str):
         return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={
-                    "signal": ResponseStatus.CollectionNotFaild.value
+                    "signal": ResponseStatus.CollectionNotFound.value
                 }
             )
 

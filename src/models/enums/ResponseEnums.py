@@ -21,5 +21,5 @@ class ResponseStatus(Enum):
     VECTORDB_SEARCH_FAILD = 'vector_db_search_failed'
     VECTORDB_SEARCH_SUCCESS = 'vector_db_search_success'
 
-    CollectionNotFaild = 'collection_not_faild'
+    CollectionNotFound = 'collection_not_found'
     CollectionInfoSuccess = 'collection_info_success'
