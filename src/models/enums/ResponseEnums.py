@@ -23,3 +23,6 @@ class ResponseStatus(Enum):
 
     CollectionNotFound = 'collection_not_found'
     CollectionInfoSuccess = 'collection_info_success'
+
+    RagAnswerFaild = 'rag_answer_failed'
+    RagAnswerSuccess = 'rag_answer_success'

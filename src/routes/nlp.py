@@ -138,3 +138,39 @@ async def get_collection_info(request: Request , project_id: str):
             "results": collection_info
         }
     )
+
+@nlp_router.post("/answer{project_id}")
+async def search(request: Request , project_id: str, search_request: SearchRequest ,app_settings: Settings = Depends(get_settings)):
+    project_model = await ProjectModel.create_instance(
+        db_client=request.app.mongodb_client
+    )
+
+    if not await project_model.does_project_exist(project_id):
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={
+                    "signal": ResponseStatus.ProjectNotFound.value
+                }
+            )
+
+    project = await project_model.find_project(project_id)
+    nlp_controller = NlpController(llm_provider=request.app.llm_provider, vector_db_provider=request.app.vector_db_provider)
+
+    answer, chat_history = nlp_controller.answer_rag_question(locale=app_settings.LOCALE,project=project,question=search_request.query,limit=2)
+
+    if not answer:
+        return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={
+                    "signal": ResponseStatus.RagAnswerFaild.value
+                }
+            )
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "signal": ResponseStatus.RagAnswerSuccess.value,
+            "answer": answer,
+            "chat_history": chat_history
+        }
+    )

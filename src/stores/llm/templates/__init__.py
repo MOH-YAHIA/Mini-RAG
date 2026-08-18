@@ -1,1 +1,1 @@
-from template_parser import TemplateParser
+from .template_parser import TemplateParser
