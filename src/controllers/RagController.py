@@ -4,7 +4,7 @@ from typing import List
 from stores.llm.templates import TemplateParser
 from stores.llm.LLMEnums import OpenAIEnums
 
-class NlpController(BaseController):
+class RagController(BaseController):
     def __init__(self,llm_provider, vector_db_provider):
         super().__init__()
 
@@ -64,7 +64,8 @@ class NlpController(BaseController):
             if not results:
                 return False
 
-            return results
+            retrieved_documents_with_scores = [{"text":result.dict().get("payload").get("text"), "score":result.dict().get("score")} for result in results]
+            return retrieved_documents_with_scores
 
     
     def get_project_collection_info(self,project: Project):
@@ -73,7 +74,7 @@ class NlpController(BaseController):
             return None
         collection_info = self.vector_db_provider.get_collection_info(collection_name=collection_name)
 
-        return collection_info.dict()
+        return collection_info
 
     def answer_rag_question(self, locale : str ,  project: Project, question: str, limit: int = 10):
 
@@ -82,11 +83,11 @@ class NlpController(BaseController):
         document_prompt = templete_parser.get_rag_prompt(prompt_name="retrieved_document")
         footer_prompt = templete_parser.get_rag_prompt(prompt_name="footer").substitute()
 
-        results = self.search_vector_db(project=project, text=question, limit=limit)
-        if not results:
+        retrieved_documents_with_scores = self.search_vector_db(project=project, text=question, limit=limit)
+        if not retrieved_documents_with_scores:
             return None, None
 
-        docs_text = [result.dict().get("payload").get("text") for result in results]
+        docs_text = [retrieved_document_with_scores["text"] for retrieved_document_with_scores in retrieved_documents_with_scores]
         retrived_text = "\n\n" + "\n\n".join([document_prompt.substitute(retrieved_text=doc_text) for doc_text in docs_text])
 
         system_prompt += retrived_text

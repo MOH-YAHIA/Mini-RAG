@@ -15,11 +15,11 @@ class ResponseStatus(Enum):
 
     AssetProcessSuccess = 'asset_process_success'
     ProjectNotFound = 'project_not_found_error'
-    ChunksIndexedSuccess = 'chunks_indexed_success'
-    ChunksIndexedFaild = 'chunks_indexed_failed'
+    ChunksEmbeddedSuccess = 'chunks_embedded_success'
+    ChunksEmbeddedFaild = 'chunks_embedded_failed'
 
-    VECTORDB_SEARCH_FAILD = 'vector_db_search_failed'
-    VECTORDB_SEARCH_SUCCESS = 'vector_db_search_success'
+    VectorDBRetrieveFaild = 'vector_db_retrieve_failed'
+    VectorDBRetrieveSuccess = 'vector_db_retrieve_success'
 
     CollectionNotFound = 'collection_not_found'
     CollectionInfoSuccess = 'collection_info_success'

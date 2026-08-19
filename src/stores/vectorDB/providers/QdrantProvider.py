@@ -36,9 +36,15 @@ class QdrantProvider(ProviderInterface):
         return self.client.get_collections()
 
     def get_collection_info(self, collection_name: str) -> dict:
-        return self.client.get_collection(
+        collection_info = self.client.get_collection(
             collection_name=collection_name
         )
+
+        return {
+            "collection_status": collection_info.status.value,
+            "points_count": collection_info.points_count,
+            "vectors_config": collection_info.config.params.vectors.model_dump()
+        }
 
     def delete_collection(self, collection_name: str):
         if self.is_collection_existed(collection_name):
