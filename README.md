@@ -1,4 +1,4 @@
-# Mini-RAG-App
+# Mini-RAG
 
 A modular **Retrieval-Augmented Generation (RAG)** API built with **FastAPI, MongoDB, Qdrant, and LLM/embedding providers**.
 
