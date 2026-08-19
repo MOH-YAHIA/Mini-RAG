@@ -1,4 +1,4 @@
-from .enums.ResponseEnums import ResponseStatus
+from routes.enums.ResponseEnums import ResponseStatus
 from .enums.ProcessEnums import ProcessTypeEnums
 from .enums.DatabaseEnums import DatabaseEnums
 from .enums.AssetTypeEnums import AssetTypeEnums

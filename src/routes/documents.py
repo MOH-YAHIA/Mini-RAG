@@ -1,19 +1,20 @@
 from fastapi import APIRouter,UploadFile,status,Depends,Request
 from controllers import AssetController, ProcessController
-from models import ResponseStatus,AssetTypeEnums, Chunk, ProjectModel, ChunkModel, AssetModel, Asset
+from models import AssetTypeEnums, Chunk, ProjectModel, ChunkModel, AssetModel, Asset
 from fastapi.responses import JSONResponse
 import os
 from helpers.config import get_settings,Settings
 import aiofiles
-from .request_schemes import ProcessRequest
+from .request_schemes import ProcessRequest,ProcessResponse, AssetUploadResponse
 import logging
+from .enums.ResponseEnums import ResponseStatus
 
 
 logger = logging.getLogger('uvicorn.error')
 
-router = APIRouter(prefix="/data", tags=["data house"])
+documents_router = APIRouter(prefix="/documents", tags=["data house"])
 
-@router.post("/upload{project_id}")
+@documents_router.post("/upload/{project_id}", response_model=AssetUploadResponse)
 async def upload_data(request: Request ,project_id: str, asset: UploadFile, app_settings: Settings = Depends(get_settings)):
 
     project_model = await ProjectModel.create_instance(request.app.mongodb_client)
@@ -27,6 +28,8 @@ async def upload_data(request: Request ,project_id: str, asset: UploadFile, app_
             status_code=status.HTTP_400_BAD_REQUEST,
             content=str(result)
         )
+    # response_model validates normal return values, not manually constructed Response objects such as JSONResponse.
+    # so when we pass JSONResponse. fastapi doesn't validate it throw response_model. it return it directly.
     
     
     asset_path,asset_name = asset_controller.generate_unique_assetpath(
@@ -56,17 +59,14 @@ async def upload_data(request: Request ,project_id: str, asset: UploadFile, app_
     asset = await asset_model.insert_asset(asset)
 
 
-    result={'signal' : str(ResponseStatus.AssetUploadSuccess.value)}
-    result['asset_name']=asset_name
-    result['project_id']=str(project.id)    
-    result['asset_id']=str(asset.id)
-
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content=result,
+    return AssetUploadResponse(
+        status=ResponseStatus.AssetUploadSuccess.value,
+        asset_name=asset_name,
+        project_id=str(project.id),
+        asset_id=str(asset.id),
     )
 
-@router.post("/process{project_id}")
+@documents_router.post("/process/{project_id}", response_model=ProcessResponse)
 async def process_data(request: Request, project_id: str, process_request:ProcessRequest):
 
     asset_name = process_request.asset_name
@@ -104,7 +104,7 @@ async def process_data(request: Request, project_id: str, process_request:Proces
 
     process_controler = ProcessController(project_id)
     total_chunks_created = 0
-    successful_asset_process = 0
+    successful_asset_processed = 0
     for asset in assets:
         asset_name = asset.asset_name
         documents = process_controler.load_document(asset_name)
@@ -129,14 +129,11 @@ async def process_data(request: Request, project_id: str, process_request:Proces
 
         chunk_count = await chunk_model.insert_chunks(ready_chunks)
         total_chunks_created += chunk_count
-        successful_asset_process+=1 
-
-    result = {'signal': str(ResponseStatus.AssetProcessSuccess.value)}
-    result['total_chunks_created']=total_chunks_created
-    result['successful_asset_process']=successful_asset_process
+        successful_asset_processed+=1 
 
 
-    return JSONResponse(
-                status_code=status.HTTP_200_OK,
-                content=result
-            )
+    return ProcessResponse(
+        status=ResponseStatus.AssetProcessSuccess.value,
+        total_chunks_created=total_chunks_created,
+        successful_asset_processed=successful_asset_processed
+    )
