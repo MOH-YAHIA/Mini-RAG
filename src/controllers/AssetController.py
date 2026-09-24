@@ -3,7 +3,7 @@ import re
 
 from .BaseController import BaseController
 from fastapi import UploadFile
-from models import ResponseStatus
+from routes.enums.ResponseEnums import ResponseStatus
 from .ProjectController import ProjectController
 
 class AssetController(BaseController):

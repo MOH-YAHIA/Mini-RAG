@@ -4,7 +4,7 @@ from typing import List
 from langchain_core.documents import Document
 from langchain_community.document_loaders import TextLoader, PyPDFLoader
 import os 
-from models import ProcessTypeEnums
+from models.enums import ProcessTypeEnums
 from typing import List
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 

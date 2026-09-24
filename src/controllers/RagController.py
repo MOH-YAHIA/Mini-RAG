@@ -1,5 +1,5 @@
 from .BaseController import BaseController
-from models import Project,Chunk
+from models.db_schemes import Project, Chunk
 from typing import List
 from stores.llm.templates import TemplateParser
 from stores.llm.LLMEnums import OpenAIEnums
