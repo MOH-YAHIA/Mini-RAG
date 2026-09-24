@@ -1,12 +1,31 @@
 services:
-  mongodb:
-    image: mongo:8
-    container_name: mongodb
+  postgres:
+    image: pgvector/pgvector:pg18
+    container_name: rag_postgres
     restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: rag_db
+
     ports:
-      - "27007:27017"
+      - "4444:5432"
+
     volumes:
-      - ./mongodb_data:/data/db
+      - ./postgres_data:/var/lib/postgresql
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: unless-stopped
+
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+
+    ports:
+      - "5050:80"
 
   qdrant:
     image: qdrant/qdrant:v1.19.0
