@@ -1,10 +1,12 @@
 from fastapi import APIRouter,UploadFile,status,Depends,Request
 from controllers import AssetController, ProcessController
-from models import AssetTypeEnums, Chunk, ProjectModel, ChunkModel, AssetModel, Asset
+from repositories import ProjectRepository,AssetRepository,ChunkRepository
 from fastapi.responses import JSONResponse
 import os
 from helpers.config import get_settings,Settings
 import aiofiles
+from models.db_schemes import Asset, Chunk
+from models.enums import AssetTypeEnums
 from .request_schemes import ProcessRequest,ProcessResponse, AssetUploadResponse
 import logging
 from .enums.ResponseEnums import ResponseStatus
@@ -17,8 +19,8 @@ documents_router = APIRouter(prefix="/documents", tags=["data house"])
 @documents_router.post("/upload/{project_id}", response_model=AssetUploadResponse)
 async def upload_data(request: Request ,project_id: str, asset: UploadFile, app_settings: Settings = Depends(get_settings)):
 
-    project_model = await ProjectModel.create_instance(request.app.mongodb_client)
-    project = await project_model.find_project(project_id)
+    project_repository = ProjectRepository(request.app.db_client)
+    project = await project_repository.find_project(project_id)
 
     asset_controller = AssetController()
     result = asset_controller.validate_asset(asset)
@@ -48,7 +50,7 @@ async def upload_data(request: Request ,project_id: str, asset: UploadFile, app_
             content=ResponseStatus.AssetUploadFailed.value
         )
 
-    asset_model = await AssetModel.create_instance(request.app.mongodb_client)
+    asset_repository =  AssetRepository(request.app.db_client)
     asset = Asset(
         asset_project_id=project.id,
         asset_name=asset_name,
@@ -56,7 +58,7 @@ async def upload_data(request: Request ,project_id: str, asset: UploadFile, app_
         asset_size=os.path.getsize(asset_path)
 
     )
-    asset = await asset_model.insert_asset(asset)
+    asset = await asset_repository.insert_asset(asset)
 
 
     return AssetUploadResponse(
@@ -74,27 +76,27 @@ async def process_data(request: Request, project_id: str, process_request:Proces
     chunk_overlap = process_request.overlap_size
     do_reset = process_request.do_reset
     
-    project_model = await ProjectModel.create_instance(request.app.mongodb_client)
-    asset_model = await AssetModel.create_instance(request.app.mongodb_client)
-    chunk_model = await ChunkModel.create_instance(request.app.mongodb_client)
+    project_repository =  ProjectRepository(request.app.db_client)
+    asset_repository =  AssetRepository(request.app.db_client)
+    chunk_repository =  ChunkRepository(request.app.db_client)
 
 
-    project = await project_model.find_project(project_id)
+    project = await project_repository.find_project(project_id)
     if do_reset:
-        _ = await chunk_model.delete_chunks_by_project_id(project.id)
+        _ = await chunk_repository.delete_chunks_by_project_id(project.id)
 
     
     
     assets = []
     if asset_name:
-        assets = [await asset_model.get_asset(asset_project_id=project.id, asset_name=asset_name)]
+        assets = [await asset_repository.get_asset(asset_project_id=project.id, asset_name=asset_name)]
         if assets[0] is None:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
                 content=str(ResponseStatus.AssetNotFound.value)
             )
     else:
-        assets = await asset_model.get_project_assets(asset_project_id=project.id, asset_type=AssetTypeEnums.File.value)
+        assets = await asset_repository.get_project_assets(asset_project_id=project.id, asset_type=AssetTypeEnums.File.value)
         if len(assets) == 0:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -127,7 +129,7 @@ async def process_data(request: Request, project_id: str, process_request:Proces
         for i,doc in enumerate(chunks)]
     
 
-        chunk_count = await chunk_model.insert_chunks(ready_chunks)
+        chunk_count = await chunk_repository.insert_chunks(ready_chunks)
         total_chunks_created += chunk_count
         successful_asset_processed+=1 
 

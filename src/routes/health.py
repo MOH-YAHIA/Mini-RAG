@@ -1,5 +1,6 @@
 from fastapi import APIRouter,Request, status
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
 from .request_schemes import ReadinessResponse
 
 health_router = APIRouter(prefix="/health", tags=["health checks"])
@@ -13,29 +14,29 @@ async def is_alive():
 
 @health_router.get('/ready' , response_model=ReadinessResponse)
 async def readiness_check(request: Request):
-    mongodb_conn = request.app.mongodb_conn
+    db_client = request.app.db_client
     vector_db_provider = request.app.vector_db_provider
 
-    mongodb_healthy = True
+    db_healthy = True
     vector_db_provider_healthy = True
 
     try:
-        await mongodb_conn.admin.command("ping")
+        await db_client.execute(text("SELECT 1"))
     except Exception:
-        mongodb_healthy = False
+        db_healthy = False
 
     try:
         vector_db_provider.connect()
     except Exception:
         vector_db_provider_healthy = False
 
-    healthy = mongodb_healthy and vector_db_provider_healthy
+    healthy = db_healthy and vector_db_provider_healthy
 
     return JSONResponse(
         content={
             "status": "ok" if healthy else "unhealthy",
             "dependencies": {
-                "mongodb": "ok" if mongodb_healthy else "unhealthy",
+                "db": "ok" if db_healthy else "unhealthy",
                 "vectordb": "ok" if vector_db_provider_healthy else "unhealthy",
             },
         },

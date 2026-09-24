@@ -1,8 +1,9 @@
 from fastapi import APIRouter,status,Depends,Request
 from controllers import  RagController
-from models import ResponseStatus, ProjectModel, ChunkModel, AssetModel
+from repositories import ProjectRepository,AssetRepository,ChunkRepository
 from fastapi.responses import JSONResponse
 from helpers.config import get_settings,Settings
+from routes.enums.ResponseEnums import ResponseStatus
 from .request_schemes import EmbedRequest,RetrieveRequest, EmbedResponse, RetriveResponse, CollectionInfoResponse, ChatResponse
 import logging
 
@@ -14,38 +15,34 @@ rag_router = APIRouter(prefix="/rag", tags=["rag house"])
 @rag_router.post("/embed/{project_id}", response_model=EmbedResponse)
 async def embed(request: Request , project_id: str, embed_request: EmbedRequest, app_settings: Settings = Depends(get_settings)):
 
-    project_model = await ProjectModel.create_instance(
-        db_client=request.app.mongodb_client
-    )
-    chunk_model = await ChunkModel.create_instance(
-            db_client=request.app.mongodb_client
-        )
+    project_repository = ProjectRepository(request.app.db_client)
+    chunk_repository = ChunkRepository(request.app.db_client)
     
-    if not await project_model.does_project_exist(project_id):
+    if not await project_repository.does_project_exist(project_id):
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={
                     "signal": ResponseStatus.ProjectNotFound.value
                 }
             )
-    project = await project_model.find_project(project_id)
+    project = await project_repository.find_project(project_id)
 
     if embed_request.asset_name :
-        asset_model = await AssetModel.create_instance(
-            db_client=request.app.mongodb_client
+        asset_repository = AssetRepository(
+            request.app.db_client
         )
-        if not await asset_model.dose_asset_exist(embed_request.asset_name):
+        if not await asset_repository.dose_asset_exist(embed_request.asset_name):
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={
                     "signal": ResponseStatus.AssetNotFound.value
                 }
             )
-        asset = await asset_model.get_asset(asset_project_id=project.id, asset_name=embed_request.asset_name)
-        chunks = await chunk_model.get_chunks_by_asset_id(asset.id)
+        asset = await asset_repository.get_asset(asset_project_id=project.id, asset_name=embed_request.asset_name)
+        chunks = await chunk_repository.get_chunks_by_asset_id(asset.id)
 
     else:
-        chunks = await chunk_model.get_chunks_by_project_id(project.id)
+        chunks = await chunk_repository.get_chunks_by_project_id(project.id)
           
     rag_controller = RagController(llm_provider=request.app.llm_provider, vector_db_provider=request.app.vector_db_provider)
     inserted = rag_controller.embed_chunks(project = project, chunks = chunks, 
@@ -69,11 +66,11 @@ async def embed(request: Request , project_id: str, embed_request: EmbedRequest,
 
 @rag_router.post("/retrieve/{project_id}", response_model=RetriveResponse)
 async def search(request: Request , project_id: str, retrieve_request: RetrieveRequest ,app_settings: Settings = Depends(get_settings)):
-    project_model = await ProjectModel.create_instance(
-        db_client=request.app.mongodb_client
+    project_repository = ProjectRepository(
+        request.app.db_client
     )
 
-    if not await project_model.does_project_exist(project_id):
+    if not await project_repository.does_project_exist(project_id):
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={
@@ -81,7 +78,7 @@ async def search(request: Request , project_id: str, retrieve_request: RetrieveR
                 }
             )
 
-    project = await project_model.find_project(project_id)
+    project = await project_repository.find_project(project_id)
     nlp_controller = RagController(llm_provider=request.app.llm_provider, vector_db_provider=request.app.vector_db_provider)
     retrieved_documents_with_scores = nlp_controller.search_vector_db(project=project,text=retrieve_request.query,limit=retrieve_request.limit)
 
@@ -101,11 +98,11 @@ async def search(request: Request , project_id: str, retrieve_request: RetrieveR
 
 @rag_router.get("/collection_info/{project_id}", response_model=CollectionInfoResponse)
 async def get_collection_info(request: Request , project_id: str):
-    project_model = await ProjectModel.create_instance(
-        db_client=request.app.mongodb_client
+    project_repository = ProjectRepository(
+        request.app.db_client
     )
 
-    if not await project_model.does_project_exist(project_id):
+    if not await project_repository.does_project_exist(project_id):
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={
@@ -113,7 +110,7 @@ async def get_collection_info(request: Request , project_id: str):
                 }
             )
 
-    project = await project_model.find_project(project_id)
+    project = await project_repository.find_project(project_id)
     rag_controller = RagController(llm_provider=request.app.llm_provider, vector_db_provider=request.app.vector_db_provider)
     collection_info = rag_controller.get_project_collection_info(project=project)
 
@@ -134,11 +131,11 @@ async def get_collection_info(request: Request , project_id: str):
 
 @rag_router.post("/chat/{project_id}", response_model=ChatResponse)
 async def search(request: Request , project_id: str, retrieve_request: RetrieveRequest ,app_settings: Settings = Depends(get_settings)):
-    project_model = await ProjectModel.create_instance(
-        db_client=request.app.mongodb_client
+    project_repository = ProjectRepository(
+        request.app.db_client
     )
 
-    if not await project_model.does_project_exist(project_id):
+    if not await project_repository.does_project_exist(project_id):
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={
@@ -146,7 +143,7 @@ async def search(request: Request , project_id: str, retrieve_request: RetrieveR
                 }
             )
 
-    project = await project_model.find_project(project_id)
+    project = await project_repository.find_project(project_id)
     rag_controller = RagController(llm_provider=request.app.llm_provider, vector_db_provider=request.app.vector_db_provider)
 
     answer, chat_history = rag_controller.answer_rag_question(locale=app_settings.LOCALE,project=project,question=retrieve_request.query,limit=retrieve_request.limit)
