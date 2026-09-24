@@ -10,6 +10,7 @@ class Settings(BaseSettings): # act like validation layer.read and parse envirom
     MONGODB_URL : str
     MONGODB_DATABASE : str
 
+    DATABASE_URL : str
     PROVIDER : str
     OPENAI_BASE_URL : str
     OPENAI_BASE_API_KEY : str

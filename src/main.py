@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 import uvicorn
+from database.database_manager import DatabaseManager
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from routes import documents_router, health_router, rag_router
@@ -18,19 +19,31 @@ logging.basicConfig(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    env_vars = get_settings()
+    settings = get_settings()
+    
+    database_manager = DatabaseManager(
+        settings.DATABASE_URL
+    )
 
-    app.mongodb_conn = AsyncIOMotorClient(env_vars.MONGODB_URL) # Create/configure the client. No DB I/O is awaited here. 
-    app.mongodb_client = app.mongodb_conn[env_vars.MONGODB_DATABASE]
+    # Create database tables if not exist
+    await database_manager.create_tables()
 
-    app.llm_provider = LLMProviderFactory(env_vars).get_provider()
-    app.vector_db_provider = VectorDBProviderFactory(env_vars).get_provider()
+    # Create session manager
+    session_manager = database_manager.get_async_session_manager()
+
+    # Open database session
+    async with session_manager() as session:
+        app.db_client = session
+
+
+    app.llm_provider = LLMProviderFactory(settings).get_provider()
+    app.vector_db_provider = VectorDBProviderFactory(settings).get_provider()
     app.vector_db_provider.connect()
 
     yield
 
     # Shutdown
-    app.mongodb_conn.close()
+    await database_manager.close_database_engine()
     app.vector_db_provider.disconnect()
 
 def create_app() -> FastAPI:
