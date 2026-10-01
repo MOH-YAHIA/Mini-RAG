@@ -20,13 +20,7 @@ logging.basicConfig(
 async def lifespan(app: FastAPI):
     # Startup
     settings = get_settings()
-    database_manager = DatabaseManager(
-        settings.DATABASE_URL
-    )
-
-    # Create database tables if not exist
-    await database_manager.create_tables()
-
+   
     app.llm_provider = LLMProviderFactory(settings).get_provider()
     app.vector_db_provider = VectorDBProviderFactory(settings).get_provider()
     app.vector_db_provider.connect()
@@ -34,7 +28,6 @@ async def lifespan(app: FastAPI):
     yield
 
     # Shutdown
-    await database_manager.close_database_engine()
     app.vector_db_provider.disconnect()
 
 def create_app() -> FastAPI:

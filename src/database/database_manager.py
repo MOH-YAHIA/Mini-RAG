@@ -46,3 +46,5 @@ async def get_db():
     database_manager = DatabaseManager(db_url)
     async with database_manager.session_manager() as session:
         yield session
+
+    await database_manager.close_database_engine()
