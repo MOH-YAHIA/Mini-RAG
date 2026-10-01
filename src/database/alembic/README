@@ -1,1 +1,11 @@
-Generic single-database configuration.
+update database url in alembic.ini
+
+to create a new version, run:
+```bash
+alembic -c [alembic.ini path] revision --autogenerate -m "message"
+```
+
+to update database with alembic versions
+```bash
+alembic -c [alembic.ini path] upgrade version
+```

@@ -78,6 +78,3 @@ if context.is_offline_mode():
 else:
     run_migrations_online()
 
-
-# alembic -c database/alembic.ini revision --autogenerate -m "create initial tables"
-# alembic -c database/alembic.ini upgrade head
