@@ -1,3 +1,5 @@
+from collections.abc import AsyncGenerator
+
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -6,7 +8,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy import text
 
 from models.db_schemes import AlchemyBase, AlchemyProject, AlchemyAsset, AlchemyChunk
-
+from helpers.config import get_settings
 class DatabaseManager:
     def __init__(self,database_url: str) -> None:
 
@@ -18,10 +20,7 @@ class DatabaseManager:
             self.engine,
             class_=AsyncSession, # the type of session to create
             expire_on_commit=False, # disable expire on commit. 
-        )
-    def get_async_session_manager(self) -> async_sessionmaker[AsyncSession]:
-
-        return self.session_manager
+        ) 
 
     async def create_tables(self) -> None:
         async with self.engine.begin() as connection:
@@ -41,3 +40,9 @@ class DatabaseManager:
 
     async def close_database_engine(self) -> None:
         await self.engine.dispose()
+
+async def get_db():
+    db_url = get_settings().DATABASE_URL
+    database_manager = DatabaseManager(db_url)
+    async with database_manager.session_manager() as session:
+        yield session

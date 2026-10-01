@@ -20,21 +20,12 @@ logging.basicConfig(
 async def lifespan(app: FastAPI):
     # Startup
     settings = get_settings()
-    
     database_manager = DatabaseManager(
         settings.DATABASE_URL
     )
 
     # Create database tables if not exist
     await database_manager.create_tables()
-
-    # Create session manager
-    session_manager = database_manager.get_async_session_manager()
-
-    # Open database session
-    async with session_manager() as session:
-        app.db_client = session
-
 
     app.llm_provider = LLMProviderFactory(settings).get_provider()
     app.vector_db_provider = VectorDBProviderFactory(settings).get_provider()

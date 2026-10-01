@@ -1,5 +1,6 @@
 from fastapi import APIRouter,UploadFile,status,Depends,Request
 from controllers import AssetController, ProcessController
+from database.database_manager import get_db
 from repositories import ProjectRepository,AssetRepository,ChunkRepository
 from fastapi.responses import JSONResponse
 import os
@@ -10,16 +11,16 @@ from models.enums import AssetTypeEnums
 from .request_schemes import ProcessRequest,ProcessResponse, AssetUploadResponse
 import logging
 from .enums.ResponseEnums import ResponseStatus
-
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger('uvicorn.error')
 
 documents_router = APIRouter(prefix="/documents", tags=["data house"])
 
 @documents_router.post("/upload/{project_id}", response_model=AssetUploadResponse)
-async def upload_data(request: Request ,project_id: str, asset: UploadFile, app_settings: Settings = Depends(get_settings)):
+async def upload_data(request: Request ,project_id: str, asset: UploadFile, app_settings: Settings = Depends(get_settings), db_client: AsyncSession = Depends(get_db)):
 
-    project_repository = ProjectRepository(request.app.db_client)
+    project_repository = ProjectRepository(db_client)
     project = await project_repository.find_project(project_id)
 
     asset_controller = AssetController()
@@ -50,7 +51,7 @@ async def upload_data(request: Request ,project_id: str, asset: UploadFile, app_
             content=ResponseStatus.AssetUploadFailed.value
         )
 
-    asset_repository =  AssetRepository(request.app.db_client)
+    asset_repository =  AssetRepository(db_client)
     asset = Asset(
         asset_project_id=project.id,
         asset_name=asset_name,
@@ -69,16 +70,16 @@ async def upload_data(request: Request ,project_id: str, asset: UploadFile, app_
     )
 
 @documents_router.post("/process/{project_id}", response_model=ProcessResponse)
-async def process_data(request: Request, project_id: str, process_request:ProcessRequest):
+async def process_data(request: Request, project_id: str, process_request:ProcessRequest, db_client: AsyncSession = Depends(get_db)):
 
     asset_name = process_request.asset_name
     chunk_size = process_request.chunk_size
     chunk_overlap = process_request.overlap_size
     do_reset = process_request.do_reset
     
-    project_repository =  ProjectRepository(request.app.db_client)
-    asset_repository =  AssetRepository(request.app.db_client)
-    chunk_repository =  ChunkRepository(request.app.db_client)
+    project_repository =  ProjectRepository(db_client)
+    asset_repository =  AssetRepository(db_client)
+    chunk_repository =  ChunkRepository(db_client)
 
 
     project = await project_repository.find_project(project_id)

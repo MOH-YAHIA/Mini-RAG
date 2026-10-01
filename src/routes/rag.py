@@ -6,18 +6,19 @@ from helpers.config import get_settings,Settings
 from routes.enums.ResponseEnums import ResponseStatus
 from .request_schemes import EmbedRequest,RetrieveRequest, EmbedResponse, RetriveResponse, CollectionInfoResponse, ChatResponse
 import logging
-
+from database.database_manager import get_db
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger('uvicorn.error')
 
 rag_router = APIRouter(prefix="/rag", tags=["rag house"])
 
 @rag_router.post("/embed/{project_id}", response_model=EmbedResponse)
-async def embed(request: Request , project_id: str, embed_request: EmbedRequest, app_settings: Settings = Depends(get_settings)):
+async def embed(request: Request , project_id: str, embed_request: EmbedRequest, app_settings: Settings = Depends(get_settings), db_client: AsyncSession = Depends(get_db)):
 
-    project_repository = ProjectRepository(request.app.db_client)
-    chunk_repository = ChunkRepository(request.app.db_client)
-    
+    project_repository = ProjectRepository(db_client)
+    chunk_repository = ChunkRepository(db_client)
+
     if not await project_repository.does_project_exist(project_id):
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -29,7 +30,7 @@ async def embed(request: Request , project_id: str, embed_request: EmbedRequest,
 
     if embed_request.asset_name :
         asset_repository = AssetRepository(
-            request.app.db_client
+            db_client
         )
         if not await asset_repository.dose_asset_exist(embed_request.asset_name):
             return JSONResponse(
@@ -65,9 +66,9 @@ async def embed(request: Request , project_id: str, embed_request: EmbedRequest,
     
 
 @rag_router.post("/retrieve/{project_id}", response_model=RetriveResponse)
-async def search(request: Request , project_id: str, retrieve_request: RetrieveRequest ,app_settings: Settings = Depends(get_settings)):
+async def search(request: Request , project_id: str, retrieve_request: RetrieveRequest ,app_settings: Settings = Depends(get_settings), db_client: AsyncSession = Depends(get_db)):
     project_repository = ProjectRepository(
-        request.app.db_client
+        db_client
     )
 
     if not await project_repository.does_project_exist(project_id):
@@ -97,9 +98,9 @@ async def search(request: Request , project_id: str, retrieve_request: RetrieveR
 
 
 @rag_router.get("/collection_info/{project_id}", response_model=CollectionInfoResponse)
-async def get_collection_info(request: Request , project_id: str):
+async def get_collection_info(request: Request , project_id: str, db_client: AsyncSession = Depends(get_db)):
     project_repository = ProjectRepository(
-        request.app.db_client
+        db_client
     )
 
     if not await project_repository.does_project_exist(project_id):
@@ -130,9 +131,9 @@ async def get_collection_info(request: Request , project_id: str):
     )
 
 @rag_router.post("/chat/{project_id}", response_model=ChatResponse)
-async def search(request: Request , project_id: str, retrieve_request: RetrieveRequest ,app_settings: Settings = Depends(get_settings)):
+async def search(request: Request , project_id: str, retrieve_request: RetrieveRequest ,app_settings: Settings = Depends(get_settings), db_client: AsyncSession = Depends(get_db)):
     project_repository = ProjectRepository(
-        request.app.db_client
+        db_client
     )
 
     if not await project_repository.does_project_exist(project_id):
