@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11.15"
 dependencies = [
     "aiofiles>=25.1.0",
+    "alembic>=1.20.0",
     "dotenv>=0.9.9",
     "fastapi>=0.139.2",
     "langchain-community>=0.4.2",
