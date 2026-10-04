@@ -24,7 +24,7 @@ async def readiness_check(request: Request, db_client: AsyncSession = Depends(ge
         db_healthy = False
 
     try:
-        vector_db_provider.connect()
+        await vector_db_provider.connect()
     except Exception:
         vector_db_provider_healthy = False
 
