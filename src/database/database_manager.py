@@ -14,7 +14,7 @@ class DatabaseManager:
 
         self.engine = create_async_engine(
                 database_url, # see the database location, the driver to use.
-                echo=True, # if you want to see the SQL statements
+                echo=False, # if you want to see the SQL statements
             )
         self.session_manager = async_sessionmaker(
             self.engine,

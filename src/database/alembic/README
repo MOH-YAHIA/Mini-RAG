@@ -7,5 +7,5 @@ alembic -c [alembic.ini path] revision --autogenerate -m "message"
 
 to update database with alembic versions
 ```bash
-alembic -c [alembic.ini path] upgrade version
+alembic -c [alembic.ini path] upgrade [version]
 ```
