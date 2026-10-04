@@ -35,9 +35,10 @@ class ProviderInterface(ABC):
         pass
 
     @abstractmethod
-    def insert_one(self, collection_name: str, text: str, vector: list,
-                         metadata: dict = None, 
-                         record_id: str = None):
+    def insert_one(self, collection_name: str, 
+                text: str, vector: list,
+                metadata: dict = None, 
+                record_id: str = None):
         pass
 
     @abstractmethod
