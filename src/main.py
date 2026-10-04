@@ -22,13 +22,13 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
    
     app.llm_provider = LLMProviderFactory(settings).get_provider()
-    app.vector_db_provider = VectorDBProviderFactory(settings).get_provider()
-    app.vector_db_provider.connect()
+    app.vector_db_provider = await VectorDBProviderFactory(settings).get_provider()
+    await app.vector_db_provider.connect()
 
     yield
 
     # Shutdown
-    app.vector_db_provider.disconnect()
+    await app.vector_db_provider.disconnect()
 
 def create_app() -> FastAPI:
     app = FastAPI(lifespan=lifespan)
