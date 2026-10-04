@@ -1,16 +1,27 @@
 from .VectorDBEnums import VectorDBEnums
-from .providers import QdrantProvider
+from .providers import QdrantProvider, PgvectorProvider
 from helpers.config import Settings
-from controllers.BaseController import BaseController
 
 class VectorDBProviderFactory:
     def __init__(self, config: Settings):
         self.config = config
-        self.base_controller = BaseController()
 
-    def get_provider(self):
+    async def get_provider(self):
         if self.config.VECTOR_DB_PROVIDER == VectorDBEnums.QDRANT.value:
             client =  QdrantProvider(
-                db_path = self.config.VECTOR_DB_PATH
+                db_url = self.config.VECTOR_DB_PATH,
+                default_vector_size = self.config.DEFAULT_VECTOR_SIZE,
+                distance_method = self.config.DISTANCE_METHOD,
+                index_threshold = self.config.INDEX_THRESHOLD
             )
-        return client
+            return client
+
+        if self.config.VECTOR_DB_PROVIDER == VectorDBEnums.PGVECTOR.value:
+            client =  PgvectorProvider(
+                db_url = self.config.VECTOR_DB_PATH,
+                default_vector_size = self.config.DEFAULT_VECTOR_SIZE,
+                distance_method = self.config.DISTANCE_METHOD,
+                index_threshold = self.config.INDEX_THRESHOLD
+            )
+            await client.connect()
+            return client
