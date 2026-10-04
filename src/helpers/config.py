@@ -28,7 +28,9 @@ class Settings(BaseSettings): # act like validation layer.read and parse envirom
 
     VECTOR_DB_PROVIDER : str
     VECTOR_DB_PATH : str
-    VECTOR_DB_DISTANCE_METHOD : str
+    DISTANCE_METHOD : str
+    DEFAULT_VECTOR_SIZE : int
+    INDEX_THRESHOLD : int
 
     LOCALE : str
     
