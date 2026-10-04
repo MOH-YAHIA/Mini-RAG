@@ -46,7 +46,7 @@ async def embed(request: Request , project_id: str, embed_request: EmbedRequest,
         chunks = await chunk_repository.get_chunks_by_project_id(project.id)
           
     rag_controller = RagController(llm_provider=request.app.llm_provider, vector_db_provider=request.app.vector_db_provider)
-    inserted = rag_controller.embed_chunks(project = project, chunks = chunks, 
+    inserted = await rag_controller.embed_chunks(project = project, chunks = chunks, 
                                                  embedding_size=app_settings.EMBEDDING_DIM, 
                                                  distance_method=app_settings.EMBEDDING_DISTANCE_METHOD)
 
@@ -81,7 +81,7 @@ async def search(request: Request , project_id: str, retrieve_request: RetrieveR
 
     project = await project_repository.find_project(project_id)
     nlp_controller = RagController(llm_provider=request.app.llm_provider, vector_db_provider=request.app.vector_db_provider)
-    retrieved_documents_with_scores = nlp_controller.search_vector_db(project=project,text=retrieve_request.query,limit=retrieve_request.limit)
+    retrieved_documents_with_scores = await nlp_controller.search_vector_db(project=project,text=retrieve_request.query,limit=retrieve_request.limit)
 
     if not retrieved_documents_with_scores:
         return JSONResponse(
@@ -113,7 +113,7 @@ async def get_collection_info(request: Request , project_id: str, db_client: Asy
 
     project = await project_repository.find_project(project_id)
     rag_controller = RagController(llm_provider=request.app.llm_provider, vector_db_provider=request.app.vector_db_provider)
-    collection_info = rag_controller.get_project_collection_info(project=project)
+    collection_info = await rag_controller.get_project_collection_info(project=project)
 
     if not collection_info:
         return JSONResponse(
@@ -125,9 +125,8 @@ async def get_collection_info(request: Request , project_id: str, db_client: Asy
 
     return CollectionInfoResponse(
         status= ResponseStatus.CollectionInfoSuccess.value,
-        collection_status=collection_info["collection_status"],
-        points_count=collection_info["points_count"],
-        vectors_config=collection_info["vectors_config"],
+        collection_info=collection_info["collection_info"],
+        records_count=collection_info["records_count"],
     )
 
 @rag_router.post("/chat/{project_id}", response_model=ChatResponse)
@@ -147,7 +146,7 @@ async def search(request: Request , project_id: str, retrieve_request: RetrieveR
     project = await project_repository.find_project(project_id)
     rag_controller = RagController(llm_provider=request.app.llm_provider, vector_db_provider=request.app.vector_db_provider)
 
-    answer, chat_history = rag_controller.answer_rag_question(locale=app_settings.LOCALE,project=project,question=retrieve_request.query,limit=retrieve_request.limit)
+    answer, chat_history = await rag_controller.answer_rag_question(locale=app_settings.LOCALE,project=project,question=retrieve_request.query,limit=retrieve_request.limit)
 
     if not answer:
         return JSONResponse(

@@ -18,9 +18,8 @@ class RetriveResponse(BaseModel):
 
 class CollectionInfoResponse(BaseModel):
     status: str
-    collection_status: str
-    points_count: int
-    vectors_config: dict
+    collection_info: dict
+    records_count: int
 
 class ChatResponse(BaseModel):
     status: str
