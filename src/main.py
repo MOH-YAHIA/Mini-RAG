@@ -11,6 +11,7 @@ from stores.llm import LLMProviderFactory
 from stores.vectorDB import VectorDBProviderFactory
 
 import logging
+from utils.metrics import setup_metrics
 
 logging.basicConfig(
     level=logging.INFO,
@@ -40,6 +41,8 @@ def create_app() -> FastAPI:
     return app
 
 app = create_app()
+
+setup_metrics(app) # build middleware to collect metrics, endpoint to expose metrics for prometheus to scrape
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
