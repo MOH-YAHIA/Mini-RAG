@@ -1,3 +1,8 @@
 /mongodb_data
 /qdrant_data
 /postgres_data
+
+/env/.env.*
+!/env/.env.*.example
+
+rag/alembic.ini
