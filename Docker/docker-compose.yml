@@ -1,37 +1,130 @@
 services:
   postgres:
     image: pgvector/pgvector:pg18
-    container_name: rag_postgres
-    restart: unless-stopped
-
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: rag_db
-
+    container_name: postgres
+    restart: unless-stopped 
     ports:
-      - "4444:5432"
-
+      - "5432:5432"
     volumes:
-      - ./postgres_data:/var/lib/postgresql
+      - postgres_data:/var/lib/postgresql
+    env_file:
+      - ./env/.env.postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"] # we use double $$ to escape the $ in docker-compose.yml ($ is used for variable substitution in docker-compose.yml, compose convert $$ to $ so the shell look for the variable)
+      interval: 1m30s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.20.1
+    container_name: postgres-exporter
+    restart: unless-stopped
+    ports:
+      - "9187:9187"
+    env_file:
+      - ./env/.env.postgres_exporter
+    depends_on:
+      - postgres
+
 
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin
     restart: unless-stopped
-
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-
+    env_file:
+      - ./env/.env.pgadmin
     ports:
-      - "5050:80"
+      - "8080:80"
+    depends_on:
+      - postgres
+
 
   qdrant:
     image: qdrant/qdrant:v1.19.0
     container_name: qdrant
     restart: unless-stopped
     ports:
-      - "63336:6333"
+      - "6333:6333"
+      - "6334:6334"
     volumes:
-      - ./qdrant_data:/qdrant/storage
+      - qdrant_data:/qdrant/storage
+
+  prometheus:
+    image: prom/prometheus:v3.15.0
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - "--web.enable-lifecycle"
+  
+  grafana:
+    image: grafana/grafana:13.0
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    env_file:
+      - ./env/.env.grafana
+    depends_on:
+      - prometheus
+  
+  node-exporter:
+    image: prom/node-exporter:v1.12.1
+    container_name: node-exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.rootfs=/rootfs"
+      - "--path.sysfs=/host/sys"
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+
+  fastapi:
+    build:
+      context: ..
+      dockerfile: ./Docker/rag/Dockerfile
+    container_name: fastapi
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./env/.env.app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - fastapi_uploaded_assets:/app/assets
+    
+  nginx:
+    image: nginx:1.30
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - fastapi
+
+volumes:
+  postgres_data:
+  prometheus_data:
+  grafana_data:
+  qdrant_data:
+  fastapi_uploaded_assets:
